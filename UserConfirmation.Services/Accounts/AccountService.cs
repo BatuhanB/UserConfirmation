@@ -24,6 +24,9 @@ public class AccountService(UserManager<ApplicationUser> userManager,
         if (user != null)
         {
             var code = _confirmationService.SendConfirmationCode(user.Id);
+
+            Thread.Sleep(1000);
+
             if (code is not null)
             {
                 if (_confirmationService.ValidateConfirmationCodeAsync(user.Id, code).Result)

@@ -16,9 +16,10 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
 
 builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection("RabbitMQ"));
 
+builder.Services.AddHostedService<ConfirmationWorker>();
+
 builder.Services.RegisterServices(builder.Configuration);
 builder.Services.AddScoped<IConfirmationService, ConfirmationService>();
-builder.Services.AddHostedService<ConfirmationWorker>();
 
 builder.Services.AddControllers();
 
