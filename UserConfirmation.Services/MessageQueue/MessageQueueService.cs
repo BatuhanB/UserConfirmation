@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using RabbitMQ.Client;
 using System.Text;
 using UserConfirmation.Shared.Models;
@@ -8,9 +9,16 @@ public class MessageQueueService : IMessageQueueService
 {
     private readonly IConnection _connection;
     private readonly IModel _channel;
-    public MessageQueueService()
+    private readonly RabbitMqSettings _rabbitMqSettings;
+    public MessageQueueService(IOptions<RabbitMqSettings> options)
     {
-        var factory = new ConnectionFactory() { HostName = "localhost" };
+        _rabbitMqSettings = options.Value;
+        var factory = new ConnectionFactory() { 
+            HostName = _rabbitMqSettings.HostName,
+            UserName = _rabbitMqSettings.UserName,
+            Password = _rabbitMqSettings.Password,
+            Port = _rabbitMqSettings.Port,
+        };
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
         _channel.QueueDeclare(queue: "confirmationQueue", durable: false, exclusive: false, autoDelete: false, arguments: null);

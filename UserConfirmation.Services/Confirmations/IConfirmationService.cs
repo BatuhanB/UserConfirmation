@@ -2,4 +2,5 @@
 public interface IConfirmationService
 {
     Task GenerateAndSendConfirmationCodeAsync(string userId);
+    string GenerateCode();
 }

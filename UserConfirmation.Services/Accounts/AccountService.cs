@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using UserConfirmation.Data.Models;
+using UserConfirmation.Services.Confirmations;
 using UserConfirmation.Services.MessageQueue;
 using UserConfirmation.Shared.Models;
 
@@ -9,17 +10,23 @@ public class AccountService : IAccountService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IMessageQueueService _messageQueueService;
+    private readonly IConfirmationService _confirmationService;
 
-    public AccountService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IMessageQueueService messageQueueService)
+    public AccountService(UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        IMessageQueueService messageQueueService,
+        IConfirmationService confirmationService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _messageQueueService = messageQueueService;
+        _confirmationService = confirmationService;
     }
 
     public async Task<IdentityResult> RegisterUserAsync(RegisterModel model)
     {
-        var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+        var code = _confirmationService.GenerateCode();
+        var user = new ApplicationUser { UserName = model.UserName, Email = model.Email,ConfirmationCode = code };
         return await _userManager.CreateAsync(user, model.Password);
     }
 

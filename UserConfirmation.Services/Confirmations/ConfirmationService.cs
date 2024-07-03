@@ -20,7 +20,7 @@ public class ConfirmationService(UserManager<ApplicationUser> userManager) : ICo
         }
     }
 
-    private string GenerateCode()
+    public string GenerateCode()
     {
         // Implement your code generation logic here
         return new Random().Next(100000, 999999).ToString();

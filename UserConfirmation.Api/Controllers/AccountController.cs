@@ -10,7 +10,7 @@ namespace UserConfirmation.Api.Controllers
     {
         private readonly IAccountService _accountService = accountService;
 
-        [HttpPost("register")]
+        [HttpPost]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
             var result = await _accountService.RegisterUserAsync(model);
@@ -21,7 +21,7 @@ namespace UserConfirmation.Api.Controllers
             return BadRequest(result.Errors);
         }
 
-        [HttpPost("login")]
+        [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             var result = await _accountService.LoginUserAsync(model);
