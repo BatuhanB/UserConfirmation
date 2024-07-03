@@ -1,6 +1,6 @@
 ﻿namespace UserConfirmation.Services.Confirmations;
 public interface IConfirmationService
 {
-    Task GenerateAndSendConfirmationCodeAsync(string userId);
-    string GenerateCode();
+    Task<bool> ValidateConfirmationCodeAsync(string userId, string code);
+    string SendConfirmationCode(string userId);
 }

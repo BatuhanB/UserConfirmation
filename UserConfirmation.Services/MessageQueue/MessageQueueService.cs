@@ -26,7 +26,10 @@ public class MessageQueueService : IMessageQueueService
 
     public void SendMessage(ConfirmationRequest request)
     {
-        var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request));
+        var message = $"{request.UserId}:{request.ConfirmationCode}";
+
+        var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
+
         _channel.BasicPublish(exchange: "", routingKey: "confirmationQueue", basicProperties: null, body: body);
     }
 

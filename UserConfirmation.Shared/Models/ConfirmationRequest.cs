@@ -1,5 +1,2 @@
 ﻿namespace UserConfirmation.Shared.Models;
-public class ConfirmationRequest
-{
-    public string UserId { get; set; }
-}
+public sealed record ConfirmationRequest(string UserId,string ConfirmationCode);

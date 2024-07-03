@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Hosting;
-using RabbitMQ.Client.Events;
-using RabbitMQ.Client;
-using UserConfirmation.Services.Confirmations;
-using System.Text;
-using Newtonsoft.Json;
-using UserConfirmation.Shared.Models;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System.Text;
+using UserConfirmation.Data.Models;
+using UserConfirmation.Shared.Models;
 
 namespace UserConfirmation.Services.Worker;
 public class ConfirmationWorker : BackgroundService
@@ -39,16 +39,17 @@ public class ConfirmationWorker : BackgroundService
         {
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
-            var request = JsonConvert.DeserializeObject<ConfirmationRequest>(message);
+            message = message.Replace("\"", "")
+                    .Replace("\\", ""); 
+            var parts = message.Split(':');
+            var userId = parts[0];
+            var confirmationCode = parts[1];
 
-            if (request != null)
-            {
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var confirmationService = scope.ServiceProvider.GetRequiredService<IConfirmationService>();
-                    await confirmationService.GenerateAndSendConfirmationCodeAsync(request.UserId);
-                }
-            }
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<Data.DbContext>();
+            var code = new ConfirmationCode(userId, confirmationCode);
+            context.ConfirmationCodes.Add(code);
+            context.SaveChanges();
         };
 
         _channel.BasicConsume(queue: "confirmationQueue", autoAck: true, consumer: consumer);

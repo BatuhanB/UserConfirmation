@@ -1,33 +1,37 @@
 ﻿
-using Microsoft.AspNetCore.Identity;
-using UserConfirmation.Data.Models;
+using Microsoft.EntityFrameworkCore;
+using UserConfirmation.Services.MessageQueue;
 
 namespace UserConfirmation.Services.Confirmations;
-public class ConfirmationService(UserManager<ApplicationUser> userManager) : IConfirmationService
+public class ConfirmationService(IMessageQueueService messageQueueService, Data.DbContext dbContext) : IConfirmationService
 {
-    private readonly UserManager<ApplicationUser> _userManager = userManager;
+    private readonly IMessageQueueService _messageQueueService = messageQueueService;
+    private readonly Data.DbContext _dbContext = dbContext;
 
-    public async Task GenerateAndSendConfirmationCodeAsync(string userId)
+    private static string GenerateCode()
     {
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user != null)
-        {
-            user.ConfirmationCode = GenerateCode();
-            await _userManager.UpdateAsync(user);
-
-            // Send confirmation code via email or other means
-            SendConfirmationCode(user.Email, user.ConfirmationCode);
-        }
-    }
-
-    public string GenerateCode()
-    {
-        // Implement your code generation logic here
         return new Random().Next(100000, 999999).ToString();
     }
 
-    private void SendConfirmationCode(string email, string confirmationCode)
+    public string SendConfirmationCode(string userId)
     {
-        // Implement email sending logic here
+        var code = GenerateCode();
+        var message = $"{userId}:{code}";
+
+        _messageQueueService.SendMessage(new Shared.Models.ConfirmationRequest(userId, code));
+
+        Console.WriteLine(" [x] Sent {0}", message);
+        return code;
+    }
+
+    public async Task<bool> ValidateConfirmationCodeAsync(string userId, string code)
+    {
+        var latestCode = await _dbContext
+            .ConfirmationCodes
+            .Where(x=>x.UserId == userId && x.Code == code)
+            .OrderByDescending(x=>x.CreatedDate)
+            .FirstOrDefaultAsync();
+
+        return latestCode != null;
     }
 }
