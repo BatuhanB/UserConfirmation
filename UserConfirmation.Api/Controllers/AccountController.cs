@@ -24,12 +24,23 @@ namespace UserConfirmation.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var result = await _accountService.LoginUserAsync(model);
-            if (result.Succeeded)
+            var callbackUrl = await _accountService.LoginUserAsync(model);
+            if (callbackUrl != null)
             {
-                return Ok(new { Message = "Login successful, confirmation required" });
+                return Ok(new { callbackUrl });
             }
             return Unauthorized();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Confirm([FromQuery] string userId, [FromQuery] string code)
+        {
+            var result = await _accountService.ConfirmUserAsync(userId, code);
+            if (result.Succeeded)
+            {
+                return Ok();
+            }
+            return BadRequest("Invalid confirmation code.");
         }
     }
 }

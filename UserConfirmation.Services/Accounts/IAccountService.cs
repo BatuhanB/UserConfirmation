@@ -5,5 +5,6 @@ namespace UserConfirmation.Services.Accounts;
 public interface IAccountService
 {
     Task<IdentityResult> RegisterUserAsync(RegisterModel model);
-    Task<SignInResult> LoginUserAsync(LoginModel model);
+    Task<string> LoginUserAsync(LoginModel model);
+    Task<SignInResult> ConfirmUserAsync(string userId,string code);
 }

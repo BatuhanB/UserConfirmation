@@ -21,29 +21,32 @@ public class AccountService(UserManager<ApplicationUser> userManager,
         return await _userManager.CreateAsync(user, model.Password);
     }
 
-    public async Task<SignInResult> LoginUserAsync(LoginModel model)
+    public async Task<string> LoginUserAsync(LoginModel model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
         if (user != null)
         {
             var code = _confirmationService.SendConfirmationCode(user.Id);
+            var callBackUrl = $"http://localhost:5141/api/account/confirm?userId={user.Id}&code={code}";
 
+            return callBackUrl;
+        }
+        return string.Empty;
+    }
+
+    public async Task<SignInResult> ConfirmUserAsync(string userId, string code)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+
+        if (user != null)
+        {
             var queueResult = await _messageQueueService.RecieveMessage();
 
-            //if (!string.IsNullOrEmpty(queueResult))
-            //{
-            //    _messageQueueService.Dispose();
-            //}
-
-
-            if (code is not null)
+            if (_confirmationService.ValidateConfirmationCodeAsync(userId, code).Result)
             {
-                if (_confirmationService.ValidateConfirmationCodeAsync(user.Id, code).Result)
-                {
-                    var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
+                var result = await _signInManager.PasswordSignInAsync(user, user.PasswordHash, false, false);
 
-                    return result;
-                }
+                return result;
             }
         }
         return SignInResult.Failed;
