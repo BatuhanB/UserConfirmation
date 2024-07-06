@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using UserConfirmation.Data.Models;
+using UserConfirmation.Services.CacheStore;
 using UserConfirmation.Services.Confirmations;
 using UserConfirmation.Services.MessageQueue;
 using UserConfirmation.Shared.Models;
@@ -8,12 +9,14 @@ namespace UserConfirmation.Services.Accounts;
 public class AccountService(UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IConfirmationService confirmationService,
-    IMessageQueueService messageQueueService) : IAccountService
+    IMessageQueueService messageQueueService,
+    ITempPasswordStore tempPasswordStore) : IAccountService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
     private readonly IConfirmationService _confirmationService = confirmationService;
     private readonly IMessageQueueService _messageQueueService = messageQueueService;
+    private readonly ITempPasswordStore _tempPasswordStore = tempPasswordStore;
 
     public async Task<IdentityResult> RegisterUserAsync(RegisterModel model)
     {
@@ -28,6 +31,7 @@ public class AccountService(UserManager<ApplicationUser> userManager,
         {
             var code = _confirmationService.SendConfirmationCode(user.Id);
             var callBackUrl = $"http://localhost:5141/api/account/confirm?userId={user.Id}&code={code}";
+            _tempPasswordStore.StorePassword(user.Id, model.Password);
 
             return callBackUrl;
         }
@@ -44,9 +48,11 @@ public class AccountService(UserManager<ApplicationUser> userManager,
 
             if (_confirmationService.ValidateConfirmationCodeAsync(userId, code).Result)
             {
-                var result = await _signInManager.PasswordSignInAsync(user, user.PasswordHash, false, false);
-
-                return result;
+                var password = _tempPasswordStore.RetrievePassword(userId);
+                if (password != null)
+                {
+                    return await _signInManager.PasswordSignInAsync(user.UserName, password, false, false);
+                }
             }
         }
         return SignInResult.Failed;
