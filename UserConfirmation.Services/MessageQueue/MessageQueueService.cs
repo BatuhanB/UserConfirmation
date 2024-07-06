@@ -46,9 +46,33 @@ public class MessageQueueService : IMessageQueueService
         _connection.Close();
     }
 
-    public Task<string> RecieveMessage()
+    //public Task<string> RecieveMessage()
+    //{
+    //    var tcs = new TaskCompletionSource<string>();
+    //    var consumer = new EventingBasicConsumer(_channel);
+
+    //    consumer.Received += async (sender, ea) =>
+    //    {
+    //        var body = ea.Body.ToArray();
+    //        var message = Encoding.UTF8.GetString(body);
+    //        message = message.Replace("\"", "").Replace("\\", "");
+
+    //        var parts = message.Split(':');
+    //        var userId = parts[0];
+    //        var confirmationCode = parts[1];
+
+    //        await ProcessCode(userId, confirmationCode);
+
+    //        tcs.TrySetResult(confirmationCode);
+    //    };
+    //    _channel.BasicConsume(queue: "confirmationQueue", autoAck: true, consumer: consumer);
+
+    //    return tcs.Task;
+    //}
+
+
+    public void RecieveMessage()
     {
-        var tcs = new TaskCompletionSource<string>();
         var consumer = new EventingBasicConsumer(_channel);
 
         consumer.Received += async (sender, ea) =>
@@ -61,21 +85,23 @@ public class MessageQueueService : IMessageQueueService
             var userId = parts[0];
             var confirmationCode = parts[1];
 
-            await ProcessCode(userId, confirmationCode);
+            ProcessCode(userId, confirmationCode).Wait();
 
-            tcs.TrySetResult(confirmationCode);
         };
         _channel.BasicConsume(queue: "confirmationQueue", autoAck: true, consumer: consumer);
-
-        return tcs.Task;
     }
 
     private async Task ProcessCode(string userId, string confirmationCode)
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<Data.DbContext>();
-        var code = new ConfirmationCode(userId, confirmationCode);
-        context.ConfirmationCodes.Add(code);
-        await context.SaveChangesAsync();
+        var isExist = context.ConfirmationCodes.Any(x => x.UserId == userId && x.Code == confirmationCode);
+
+        if (!isExist)
+        {
+            var code = new ConfirmationCode(userId, confirmationCode);
+            context.ConfirmationCodes.Add(code);
+            await context.SaveChangesAsync();
+        }    
     }
 }

@@ -30,12 +30,11 @@ public class AccountService(UserManager<ApplicationUser> userManager,
         if (user != null)
         {
             var code = _confirmationService.SendConfirmationCode(user.Id);
-            var callBackUrl = $"http://localhost:5141/api/account/confirm?userId={user.Id}&code={code}";
             _tempPasswordStore.StorePassword(user.Id, model.Password);
 
-            return callBackUrl;
+            return code;
         }
-        return string.Empty;
+        return null;
     }
 
     public async Task<SignInResult> ConfirmUserAsync(string userId, string code)
@@ -44,8 +43,7 @@ public class AccountService(UserManager<ApplicationUser> userManager,
 
         if (user != null)
         {
-            var queueResult = await _messageQueueService.RecieveMessage();
-            _messageQueueService.Dispose();
+            _messageQueueService.RecieveMessage();
 
             if (_confirmationService.ValidateConfirmationCodeAsync(userId, code).Result)
             {

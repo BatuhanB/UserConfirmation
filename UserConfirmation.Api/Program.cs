@@ -6,6 +6,7 @@ using UserConfirmation.Shared.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.AddDbContext<UserConfirmation.Data.DbContext>(opt =>
 {
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -24,7 +25,22 @@ builder.Services.AddScoped<IConfirmationService, ConfirmationService>();
 
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("client",
+                      policy =>
+                      {
+                          policy.WithOrigins("http://localhost:4200")
+                          .AllowCredentials()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                      });
+});
+
+
 var app = builder.Build();
+
+app.UseCors("client");
 
 app.UseAuthorization();
 

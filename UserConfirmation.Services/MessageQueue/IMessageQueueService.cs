@@ -4,6 +4,7 @@ namespace UserConfirmation.Services.MessageQueue;
 public interface IMessageQueueService
 {
     void SendMessage(ConfirmationRequest request);
-    Task<string> RecieveMessage();
+    //Task<string> RecieveMessage();
+    void RecieveMessage();
     void Dispose();
 }

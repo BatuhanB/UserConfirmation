@@ -24,10 +24,10 @@ namespace UserConfirmation.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var callbackUrl = await _accountService.LoginUserAsync(model);
-            if (callbackUrl != null)
+            var code = await _accountService.LoginUserAsync(model);
+            if (code != null)
             {
-                return Ok(new { callbackUrl });
+                return Ok(new { code });
             }
             return Unauthorized();
         }
