@@ -45,6 +45,7 @@ public class AccountService(UserManager<ApplicationUser> userManager,
         if (user != null)
         {
             var queueResult = await _messageQueueService.RecieveMessage();
+            _messageQueueService.Dispose();
 
             if (_confirmationService.ValidateConfirmationCodeAsync(userId, code).Result)
             {

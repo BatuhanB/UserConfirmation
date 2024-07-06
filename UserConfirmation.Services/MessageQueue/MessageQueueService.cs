@@ -14,7 +14,7 @@ public class MessageQueueService : IMessageQueueService
     private readonly IModel _channel;
     private readonly RabbitMqSettings _rabbitMqSettings;
     private readonly IServiceProvider _serviceProvider;
-    public MessageQueueService(IOptions<RabbitMqSettings> options, 
+    public MessageQueueService(IOptions<RabbitMqSettings> options,
         IServiceProvider serviceProvider)
     {
         _rabbitMqSettings = options.Value;
@@ -51,40 +51,26 @@ public class MessageQueueService : IMessageQueueService
         var tcs = new TaskCompletionSource<string>();
         var consumer = new EventingBasicConsumer(_channel);
 
-        async void ReceivedHandler(object sender, BasicDeliverEventArgs ea)
+        consumer.Received += async (sender, ea) =>
         {
-            try
-            {
-                var body = ea.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
-                message = message.Replace("\"", "").Replace("\\", "");
+            var body = ea.Body.ToArray();
+            var message = Encoding.UTF8.GetString(body);
+            message = message.Replace("\"", "").Replace("\\", "");
 
-                var parts = message.Split(':');
-                var userId = parts[0];
-                var confirmationCode = parts[1];
+            var parts = message.Split(':');
+            var userId = parts[0];
+            var confirmationCode = parts[1];
 
-                // Process the message using IMessageProcessor
-                ProcessCode(userId, confirmationCode).Wait();
+            await ProcessCode(userId, confirmationCode);
 
-                tcs.TrySetResult(confirmationCode);
-            }
-            catch (Exception ex)
-            {
-                tcs.TrySetException(ex);
-            }
-            finally
-            {
-                _channel.BasicConsume(queue: "confirmationQueue", autoAck: true, consumer: consumer);
-            }
-        }
-
-        consumer.Received += ReceivedHandler;
+            tcs.TrySetResult(confirmationCode);
+        };
         _channel.BasicConsume(queue: "confirmationQueue", autoAck: true, consumer: consumer);
 
         return tcs.Task;
     }
 
-    private async Task ProcessCode(string userId,string confirmationCode)
+    private async Task ProcessCode(string userId, string confirmationCode)
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<Data.DbContext>();

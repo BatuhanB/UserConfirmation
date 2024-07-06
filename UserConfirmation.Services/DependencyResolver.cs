@@ -11,7 +11,7 @@ public static class DependencyResolver
     {      
         services.AddScoped<ITempPasswordStore, TempPasswordStore>();
         services.AddScoped<IAccountService, AccountService>();
-        services.AddSingleton<IMessageQueueService, MessageQueueService>();
+        services.AddScoped<IMessageQueueService, MessageQueueService>();
 
         return services;
     }
