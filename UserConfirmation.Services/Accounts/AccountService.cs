@@ -24,17 +24,21 @@ public class AccountService(UserManager<ApplicationUser> userManager,
         return await _userManager.CreateAsync(user, model.Password);
     }
 
-    public async Task<string> LoginUserAsync(LoginModel model)
+    public async Task<(string userId, string code)> LoginUserAsync(LoginModel model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
         if (user != null)
         {
-            var code = _confirmationService.SendConfirmationCode(user.Id);
-            _tempPasswordStore.StorePassword(user.Id, model.Password);
+            var checkPassword = await _userManager.CheckPasswordAsync(user, model.Password);
 
-            return code;
+            if (checkPassword)
+            {
+                var code = _confirmationService.SendConfirmationCode(user.Id);
+                _tempPasswordStore.StorePassword(user.Id, model.Password);
+                return (user.Id,code);
+            }
         }
-        return null;
+        return (null,null);
     }
 
     public async Task<SignInResult> ConfirmUserAsync(string userId, string code)

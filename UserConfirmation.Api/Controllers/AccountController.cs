@@ -24,12 +24,12 @@ namespace UserConfirmation.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var code = await _accountService.LoginUserAsync(model);
-            if (code != null)
+            var result = await _accountService.LoginUserAsync(model);
+            if (result.code != null)
             {
-                return Ok(new { code });
+                return Ok(new { UserId = result.userId, Code = result.code });
             }
-            return Unauthorized();
+            return BadRequest(new { Message = "Email or password is not correct!" });
         }
 
         [HttpPost]
@@ -38,7 +38,7 @@ namespace UserConfirmation.Api.Controllers
             var result = await _accountService.ConfirmUserAsync(userId, code);
             if (result.Succeeded)
             {
-                return Ok();
+                return Ok(new { Message= "Succesfully Logged in!"});
             }
             return BadRequest("Invalid confirmation code.");
         }
