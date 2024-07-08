@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using UserConfirmation.Services.Accounts;
 using UserConfirmation.Services.CacheStore;
 using UserConfirmation.Services.MessageQueue;
+using UserConfirmation.Services.Token;
 
 namespace UserConfirmation.Services;
 public static class DependencyResolver
@@ -12,6 +13,7 @@ public static class DependencyResolver
         services.AddScoped<ITempPasswordStore, TempPasswordStore>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddSingleton<IMessageQueueService, MessageQueueService>();
+        services.AddTransient<ITokenService, TokenService>();
 
         return services;
     }

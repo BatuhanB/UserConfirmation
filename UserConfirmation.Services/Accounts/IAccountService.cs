@@ -6,5 +6,5 @@ public interface IAccountService
 {
     Task<IdentityResult> RegisterUserAsync(RegisterModel model);
     Task<(string userId,string code)> LoginUserAsync(LoginModel model);
-    Task<SignInResult> ConfirmUserAsync(string userId,string code);
+    Task<string> ConfirmUserAsync(string userId,string code);
 }

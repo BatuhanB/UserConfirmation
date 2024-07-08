@@ -3,6 +3,7 @@ using UserConfirmation.Data.Models;
 using UserConfirmation.Services.CacheStore;
 using UserConfirmation.Services.Confirmations;
 using UserConfirmation.Services.MessageQueue;
+using UserConfirmation.Services.Token;
 using UserConfirmation.Shared.Models;
 
 namespace UserConfirmation.Services.Accounts;
@@ -10,13 +11,15 @@ public class AccountService(UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IConfirmationService confirmationService,
     IMessageQueueService messageQueueService,
-    ITempPasswordStore tempPasswordStore) : IAccountService
+    ITempPasswordStore tempPasswordStore,
+    ITokenService tokenService) : IAccountService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
     private readonly IConfirmationService _confirmationService = confirmationService;
     private readonly IMessageQueueService _messageQueueService = messageQueueService;
     private readonly ITempPasswordStore _tempPasswordStore = tempPasswordStore;
+    private readonly ITokenService _tokenService = tokenService;
 
     public async Task<IdentityResult> RegisterUserAsync(RegisterModel model)
     {
@@ -34,30 +37,36 @@ public class AccountService(UserManager<ApplicationUser> userManager,
             if (checkPassword)
             {
                 var code = _confirmationService.SendConfirmationCode(user.Id);
+                _messageQueueService.RecieveMessage();
                 _tempPasswordStore.StorePassword(user.Id, model.Password);
-                return (user.Id,code);
+                return (user.Id, code);
             }
         }
-        return (null,null);
+        return (null, null);
     }
 
-    public async Task<SignInResult> ConfirmUserAsync(string userId, string code)
+    public async Task<string> ConfirmUserAsync(string userId, string code)
     {
         var user = await _userManager.FindByIdAsync(userId);
 
         if (user != null)
         {
-            _messageQueueService.RecieveMessage();
 
             if (_confirmationService.ValidateConfirmationCodeAsync(userId, code).Result)
             {
                 var password = _tempPasswordStore.RetrievePassword(userId);
                 if (password != null)
                 {
-                    return await _signInManager.PasswordSignInAsync(user.UserName, password, false, false);
+                    var signInResult =  await _signInManager.PasswordSignInAsync(user.UserName!, password, false, false);
+
+                    if (signInResult.Succeeded)
+                    {
+                        var token = await _tokenService.GenerateToken(user);
+                        return token;
+                    }
                 }
             }
         }
-        return SignInResult.Failed;
+        return null;
     }
 }

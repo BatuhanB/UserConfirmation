@@ -36,9 +36,9 @@ namespace UserConfirmation.Api.Controllers
         public async Task<IActionResult> Confirm([FromQuery] string userId, [FromQuery] string code)
         {
             var result = await _accountService.ConfirmUserAsync(userId, code);
-            if (result.Succeeded)
+            if (result != null)
             {
-                return Ok(new { Message= "Succesfully Logged in!"});
+                return Ok(new { Message = "Succesfully Logged in!", Token = result });
             }
             return BadRequest("Invalid confirmation code.");
         }

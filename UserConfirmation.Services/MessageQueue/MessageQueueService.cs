@@ -46,30 +46,6 @@ public class MessageQueueService : IMessageQueueService
         _connection.Close();
     }
 
-    //public Task<string> RecieveMessage()
-    //{
-    //    var tcs = new TaskCompletionSource<string>();
-    //    var consumer = new EventingBasicConsumer(_channel);
-
-    //    consumer.Received += async (sender, ea) =>
-    //    {
-    //        var body = ea.Body.ToArray();
-    //        var message = Encoding.UTF8.GetString(body);
-    //        message = message.Replace("\"", "").Replace("\\", "");
-
-    //        var parts = message.Split(':');
-    //        var userId = parts[0];
-    //        var confirmationCode = parts[1];
-
-    //        await ProcessCode(userId, confirmationCode);
-
-    //        tcs.TrySetResult(confirmationCode);
-    //    };
-    //    _channel.BasicConsume(queue: "confirmationQueue", autoAck: true, consumer: consumer);
-
-    //    return tcs.Task;
-    //}
-
 
     public void RecieveMessage()
     {
